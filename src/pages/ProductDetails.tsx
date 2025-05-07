@@ -45,7 +45,7 @@ const ProductDetails = () => {
           <div>
             <h1 className="text-3xl font-bold mb-2">{vegetable.name}</h1>
             <div className="text-2xl font-bold text-mboga-700 mb-4">
-              Ksh {vegetable.price} <span className="text-lg font-medium text-gray-600">per {vegetable.unit}</span>
+              Tshs {vegetable.price} <span className="text-lg font-medium text-gray-600">per {vegetable.unit}</span>
             </div>
             
             <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-6 ${
@@ -114,7 +114,7 @@ const ProductDetails = () => {
                     <div className="p-4">
                       <h3 className="font-medium">{v.name}</h3>
                       <div className="font-bold text-mboga-700 mt-1">
-                        Ksh {v.price}/{v.unit}
+                        Tshs {v.price}/{v.unit}
                       </div>
                     </div>
                   </Link>

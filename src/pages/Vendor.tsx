@@ -125,7 +125,7 @@ const Vendor = () => {
                   : 'border-gray-200'
                 }`}>
                   <h3 className="text-xl font-semibold mb-2">Basic Plan</h3>
-                  <div className="text-3xl font-bold mb-2">Ksh 500<span className="text-sm text-gray-500">/month</span></div>
+                  <div className="text-3xl font-bold mb-2">Tshs 500<span className="text-sm text-gray-500">/month</span></div>
                   <ul className="text-gray-600 space-y-2 mb-6 text-left">
                     <li className="flex items-center">
                       <div className="h-2 w-2 rounded-full bg-mboga-500 mr-2" />
@@ -155,7 +155,7 @@ const Vendor = () => {
                 
                 <div className="p-6 rounded-lg border-2 border-gray-200">
                   <h3 className="text-xl font-semibold mb-2">Premium Plan</h3>
-                  <div className="text-3xl font-bold mb-2">Ksh 1000<span className="text-sm text-gray-500">/month</span></div>
+                  <div className="text-3xl font-bold mb-2">Tshs 1000<span className="text-sm text-gray-500">/month</span></div>
                   <ul className="text-gray-600 space-y-2 mb-6 text-left">
                     <li className="flex items-center">
                       <div className="h-2 w-2 rounded-full bg-mboga-500 mr-2" />
@@ -175,7 +175,7 @@ const Vendor = () => {
                 
                 <div className="p-6 rounded-lg border-2 border-gray-200">
                   <h3 className="text-xl font-semibold mb-2">Enterprise</h3>
-                  <div className="text-3xl font-bold mb-2">Ksh 2500<span className="text-sm text-gray-500">/month</span></div>
+                  <div className="text-3xl font-bold mb-2">Tshs 2500<span className="text-sm text-gray-500">/month</span></div>
                   <ul className="text-gray-600 space-y-2 mb-6 text-left">
                     <li className="flex items-center">
                       <div className="h-2 w-2 rounded-full bg-mboga-500 mr-2" />

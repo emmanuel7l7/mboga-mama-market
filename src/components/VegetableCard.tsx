@@ -37,7 +37,7 @@ const VegetableCard: React.FC<VegetableCardProps> = ({
       <CardContent className="pt-4 flex-grow">
         <h3 className="font-semibold text-lg mb-1">{name}</h3>
         <div className="text-lg font-bold text-mboga-700 mb-2">
-          Ksh {price} <span className="text-sm font-medium text-gray-600">per {unit}</span>
+          Tshs {price} <span className="text-sm font-medium text-gray-600">per {unit}</span>
         </div>
         <p className="text-gray-600 text-sm line-clamp-2">{description}</p>
       </CardContent>
