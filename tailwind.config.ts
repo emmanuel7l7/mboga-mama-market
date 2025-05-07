@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,43 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for Mboga Mama Market
+				"mboga": {
+					50: "#f1f8e9",
+					100: "#dcedc8",
+					200: "#c5e1a5",
+					300: "#aed581",
+					400: "#9ccc65",
+					500: "#8bc34a",
+					600: "#7cb342",
+					700: "#689f38",
+					800: "#558b2f",
+					900: "#33691e",
+				},
+				"earth": {
+					50: "#efebe9",
+					100: "#d7ccc8",
+					200: "#bcaaa4",
+					300: "#a1887f",
+					400: "#8d6e63",
+					500: "#795548",
+					600: "#6d4c41",
+					700: "#5d4037",
+					800: "#4e342e",
+					900: "#3e2723",
+				},
+				"sunny": {
+					50: "#fffde7",
+					100: "#fff9c4",
+					200: "#fff59d",
+					300: "#fff176",
+					400: "#ffee58",
+					500: "#ffeb3b",
+					600: "#fdd835",
+					700: "#fbc02d",
+					800: "#f9a825",
+					900: "#f57f17",
 				}
 			},
 			borderRadius: {
