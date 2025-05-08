@@ -1,19 +1,23 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import VendorProfile from '@/components/VendorProfile';
+import EditVendorProfile from '@/components/EditVendorProfile';
 import VegetableCard from '@/components/VegetableCard';
 import AddEditVegetable from '@/components/AddEditVegetable';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { currentVendor, currentVendorProducts } from '@/data/mockData';
-import { Vegetable } from '@/lib/types';
+import type { Vegetable, Vendor } from '@/lib/types';
 import { Plus } from 'lucide-react';
+import myImage from '/images/mohammad-ebrahimi-4l-xBWZTq6o-unsplash (1).jpg'
 
 const Vendor = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [vendor, setVendor] = useState<Vendor>(currentVendor);
   const [vegetables, setVegetables] = useState<Vegetable[]>(currentVendorProducts);
   const [editingVegetable, setEditingVegetable] = useState<Vegetable | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const handleEditVegetable = (id: string) => {
     const vegetable = vegetables.find((v) => v.id === id) || null;
@@ -34,7 +38,7 @@ const Vendor = () => {
       // Adding new vegetable
       const newVegetable: Vegetable = {
         id: `p${vegetables.length + 1}`,
-        vendorId: currentVendor.id,
+        vendorId: vendor.id,
         ...updatedVegetable as Omit<Vegetable, 'id' | 'vendorId'>,
       } as Vegetable;
       
@@ -48,6 +52,68 @@ const Vendor = () => {
     setIsAddingNew(false);
   };
 
+  const handleEditProfile = () => {
+    setIsEditingProfile(true);
+  };
+
+  const handleSaveProfile = (updatedVendor: Partial<Vendor>) => {
+    setVendor(prev => ({ ...prev, ...updatedVendor }));
+    setIsEditingProfile(false);
+  };
+
+  const handleCancelProfileEdit = () => {
+    setIsEditingProfile(false);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <Layout>
+        <div className="container-custom py-16">
+          <div className="max-w-md mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold mb-2">Vendor Login</h1>
+              <p className="text-gray-600">Sign in to manage your store</p>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border p-8">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                setIsAuthenticated(true);
+              }}>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      className="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      className="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-mboga-500 hover:bg-mboga-600">
+                    Sign In
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="bg-mboga-600 py-10">
@@ -57,7 +123,19 @@ const Vendor = () => {
       </div>
 
       <div className="container-custom py-8">
-        <VendorProfile vendor={currentVendor} isEditable />
+        {isEditingProfile ? (
+          <EditVendorProfile
+            vendor={vendor}
+            onSave={handleSaveProfile}
+            onCancel={handleCancelProfileEdit}
+          />
+        ) : (
+          <VendorProfile 
+            vendor={vendor} 
+            isEditable={true}
+            onEdit={handleEditProfile}
+          />
+        )}
 
         <Tabs defaultValue="products" className="mt-8">
           <TabsList className="mb-8">
@@ -120,7 +198,7 @@ const Vendor = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-center">
                 <div className={`p-6 rounded-lg border-2 ${
-                  currentVendor.subscriptionStatus === 'active' 
+                  vendor.subscriptionStatus === 'active' 
                   ? 'border-mboga-500 bg-mboga-50' 
                   : 'border-gray-200'
                 }`}>
@@ -141,10 +219,10 @@ const Vendor = () => {
                     </li>
                   </ul>
                   
-                  {currentVendor.subscriptionStatus === 'active' ? (
+                  {vendor.subscriptionStatus === 'active' ? (
                     <>
                       <div className="text-sm text-gray-600 mb-4">
-                        Your subscription renews on {new Date(currentVendor.subscriptionEnds || "").toLocaleDateString()}
+                        Your subscription renews on {new Date(vendor.subscriptionEnds || "").toLocaleDateString()}
                       </div>
                       <Button variant="outline" className="w-full">Manage Subscription</Button>
                     </>

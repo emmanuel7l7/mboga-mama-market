@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -36,14 +35,14 @@ const Hero = () => {
           <div className="hidden md:block relative">
             <div className="aspect-square overflow-hidden rounded-full border-4 border-white shadow-lg">
               <img
-                src="https://source.unsplash.com/1576097942317-a4e69a4f7cf9"
+                src="/images/nyanya1.jpg"
                 alt="Fresh vegetables"
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="absolute -bottom-6 -left-6 aspect-square w-40 overflow-hidden rounded-full border-4 border-white shadow-lg">
               <img
-                src="https://source.unsplash.com/1582719661-c5e4f4637895"
+                src="/images/spinach.jpg"
                 alt="Vegetable vendor"
                 className="w-full h-full object-cover"
               />
