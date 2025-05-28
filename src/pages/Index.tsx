@@ -1,16 +1,75 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 import Hero from '@/components/Hero';
 import VegetableCard from '@/components/VegetableCard';
 import VendorProfile from '@/components/VendorProfile';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { mockVegetables, mockVendors } from '@/data/mockData';
+import { supabase } from '@/lib/supabase';
+import type { Tables } from '@/lib/supabase';
 
 const Index = () => {
-  const featuredVegetables = mockVegetables.slice(0, 4);
-  const featuredVendors = mockVendors.slice(0, 2);
+  const [featuredVegetables, setFeaturedVegetables] = useState<Tables['vegetables'][]>([]);
+  const [featuredVendors, setFeaturedVendors] = useState<Tables['vendors'][]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch featured vegetables
+        const { data: vegetables, error: vegetablesError } = await supabase
+          .from('vegetables')
+          .select('*')
+          .eq('in_stock', true)
+          .order('created_at', { ascending: false })
+          .limit(4);
+
+        if (vegetablesError) throw vegetablesError;
+        
+        // Fetch featured vendors
+        const { data: vendors, error: vendorsError } = await supabase
+          .from('vendors')
+          .select('*')
+          .eq('subscription_status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(2);
+
+        if (vendorsError) throw vendorsError;
+
+        setFeaturedVegetables(vegetables || []);
+        setFeaturedVendors(vendors || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container-custom py-16 text-center">
+          <p>Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container-custom py-16 text-center">
+          <p className="text-red-600">Error: {error}</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -27,7 +86,19 @@ const Index = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {featuredVegetables.map((vegetable) => (
-              <VegetableCard key={vegetable.id} vegetable={vegetable} />
+              <VegetableCard 
+                key={vegetable.id} 
+                vegetable={{
+                  id: vegetable.id,
+                  name: vegetable.name,
+                  price: vegetable.price,
+                  unit: vegetable.unit,
+                  image: vegetable.image,
+                  description: vegetable.description,
+                  inStock: vegetable.in_stock,
+                  vendorId: vegetable.vendor_id
+                }} 
+              />
             ))}
           </div>
 
@@ -50,7 +121,24 @@ const Index = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {featuredVendors.map((vendor) => (
-              <VendorProfile key={vendor.id} vendor={vendor} />
+              <VendorProfile 
+                key={vendor.id} 
+                vendor={{
+                  id: vendor.id,
+                  name: vendor.name,
+                  storeName: vendor.store_name,
+                  profilePicture: vendor.profile_picture,
+                  location: vendor.location,
+                  contact: {
+                    phone: vendor.phone,
+                    email: vendor.email
+                  },
+                  bio: vendor.bio,
+                  joinDate: vendor.join_date,
+                  subscriptionStatus: vendor.subscription_status,
+                  subscriptionEnds: vendor.subscription_ends
+                }} 
+              />
             ))}
           </div>
 

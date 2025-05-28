@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Vegetable } from '@/lib/types';
 import { Plus, X } from 'lucide-react';
+import { uploadImage } from '@/lib/storage';
 
 interface AddEditVegetableProps {
   vegetable?: Vegetable;
@@ -22,34 +22,55 @@ const AddEditVegetable: React.FC<AddEditVegetableProps> = ({
   onCancel,
   isNew = false
 }) => {
-  const [form, setForm] = useState<Partial<Vegetable>>(
-    vegetable || {
-      name: '',
-      price: 0,
-      unit: 'kg',
-      image: 'https://source.unsplash.com/1576097942317-a4e69a4f7cf9',
-      description: '',
-      inStock: true,
-    }
-  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: vegetable?.name || '',
+    price: vegetable?.price || 0,
+    unit: vegetable?.unit || '',
+    image: vegetable?.image || '',
+    description: vegetable?.description || '',
+    inStock: vegetable?.inStock ?? true,
+    imageFile: null as File | null
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    setForm({ ...form, price: isNaN(value) ? 0 : value });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setForm(prev => ({ ...prev, imageFile: e.target.files![0] }));
+    }
   };
 
-  const handleStockChange = (checked: boolean) => {
-    setForm({ ...form, inStock: checked });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(form);
+    setLoading(true);
+    setError(null);
+
+    try {
+      let imageUrl = form.image;
+
+      // Upload new image if provided
+      if (form.imageFile) {
+        imageUrl = await uploadImage(form.imageFile, 'vegetables');
+      }
+
+      onSave({
+        name: form.name,
+        price: Number(form.price),
+        unit: form.unit,
+        image: imageUrl,
+        description: form.description,
+        inStock: form.inStock
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,6 +85,12 @@ const AddEditVegetable: React.FC<AddEditVegetableProps> = ({
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="p-4 bg-red-50 text-red-600 rounded-md">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="name">Vegetable Name</Label>
             <Input
@@ -84,7 +111,7 @@ const AddEditVegetable: React.FC<AddEditVegetableProps> = ({
                 name="price"
                 type="number"
                 value={form.price}
-                onChange={handlePriceChange}
+                onChange={handleChange}
                 placeholder="0"
                 min="0"
                 step="any"
@@ -105,16 +132,15 @@ const AddEditVegetable: React.FC<AddEditVegetableProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="image">Image URL</Label>
+            <Label htmlFor="image">Image</Label>
             <Input
               id="image"
               name="image"
-              value={form.image}
-              onChange={handleChange}
-              placeholder="Image URL"
-              required
+              type="file"
+              onChange={handleFileChange}
+              accept="image/*"
             />
-            {form.image && (
+            {form.image && !form.imageFile && (
               <div className="mt-2 h-32 w-32 overflow-hidden rounded-md mx-auto">
                 <img 
                   src={form.image} 
@@ -146,7 +172,7 @@ const AddEditVegetable: React.FC<AddEditVegetableProps> = ({
             <Switch
               id="inStock"
               checked={form.inStock}
-              onCheckedChange={handleStockChange}
+              onCheckedChange={(checked) => setForm(prev => ({ ...prev, inStock: checked }))}
             />
             <Label htmlFor="inStock">In Stock</Label>
           </div>
@@ -155,10 +181,14 @@ const AddEditVegetable: React.FC<AddEditVegetableProps> = ({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" className="bg-mboga-500 hover:bg-mboga-600">
-            {isNew ? (
+          <Button 
+            type="submit" 
+            className="bg-mboga-500 hover:bg-mboga-600"
+            disabled={loading}
+          >
+            {loading ? (
               <>
-                <Plus className="mr-1 h-4 w-4" /> Add Vegetable
+                <Plus className="mr-1 h-4 w-4" /> Saving...
               </>
             ) : (
               'Save Changes'

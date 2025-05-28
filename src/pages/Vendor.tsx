@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import VendorProfile from '@/components/VendorProfile';
 import EditVendorProfile from '@/components/EditVendorProfile';
@@ -6,45 +6,214 @@ import VegetableCard from '@/components/VegetableCard';
 import AddEditVegetable from '@/components/AddEditVegetable';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { currentVendor, currentVendorProducts } from '@/data/mockData';
 import type { Vegetable, Vendor } from '@/lib/types';
 import { Plus } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import type { Tables } from '@/lib/supabase';
 import myImage from '/images/mohammad-ebrahimi-4l-xBWZTq6o-unsplash (1).jpg'
 
 const Vendor = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [vendor, setVendor] = useState<Vendor>(currentVendor);
-  const [vegetables, setVegetables] = useState<Vegetable[]>(currentVendorProducts);
+  const [vendor, setVendor] = useState<Vendor>({
+    id: '',
+    name: '',
+    storeName: '',
+    profilePicture: '',
+    location: '',
+    contact: {
+      phone: '',
+      email: ''
+    },
+    bio: '',
+    joinDate: new Date().toISOString(),
+    subscriptionStatus: 'inactive'
+  });
+  const [vegetables, setVegetables] = useState<Vegetable[]>([]);
   const [editingVegetable, setEditingVegetable] = useState<Vegetable | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsAuthenticated(true);
+        fetchVendorData(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const fetchVendorData = async (userId: string) => {
+    try {
+      // Fetch vendor profile
+      const { data: vendorData, error: vendorError } = await supabase
+        .from('vendors')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (vendorError) throw vendorError;
+
+      if (vendorData) {
+        setVendor({
+          id: vendorData.id,
+          name: vendorData.name,
+          storeName: vendorData.store_name,
+          profilePicture: vendorData.profile_picture,
+          location: vendorData.location,
+          contact: {
+            phone: vendorData.phone,
+            email: vendorData.email
+          },
+          bio: vendorData.bio,
+          joinDate: vendorData.join_date,
+          subscriptionStatus: vendorData.subscription_status,
+          subscriptionEnds: vendorData.subscription_ends
+        });
+
+        // Fetch vendor's vegetables
+        const { data: vegetablesData, error: vegetablesError } = await supabase
+          .from('vegetables')
+          .select('*')
+          .eq('vendor_id', userId);
+
+        if (vegetablesError) throw vegetablesError;
+
+        if (vegetablesData) {
+          setVegetables(vegetablesData.map(v => ({
+            id: v.id,
+            name: v.name,
+            price: v.price,
+            unit: v.unit,
+            image: v.image,
+            description: v.description,
+            inStock: v.in_stock,
+            vendorId: v.vendor_id
+          })));
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        setIsAuthenticated(true);
+        fetchVendorData(data.session.user.id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  };
+
+  const handleSaveVegetable = async (updatedVegetable: Partial<Vegetable>) => {
+    try {
+      if (editingVegetable) {
+        // Update existing vegetable
+        const { error } = await supabase
+          .from('vegetables')
+          .update({
+            name: updatedVegetable.name,
+            price: updatedVegetable.price,
+            unit: updatedVegetable.unit,
+            image: updatedVegetable.image,
+            description: updatedVegetable.description,
+            in_stock: updatedVegetable.inStock
+          })
+          .eq('id', editingVegetable.id);
+
+        if (error) throw error;
+
+        setVegetables(
+          vegetables.map((v) =>
+            v.id === editingVegetable.id ? { ...v, ...updatedVegetable } : v
+          )
+        );
+        setEditingVegetable(null);
+      } else if (isAddingNew) {
+        // Add new vegetable
+        const { data, error } = await supabase
+          .from('vegetables')
+          .insert({
+            name: updatedVegetable.name,
+            price: updatedVegetable.price,
+            unit: updatedVegetable.unit,
+            image: updatedVegetable.image,
+            description: updatedVegetable.description,
+            in_stock: updatedVegetable.inStock,
+            vendor_id: vendor.id
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          const newVegetable: Vegetable = {
+            id: data.id,
+            vendorId: vendor.id,
+            ...updatedVegetable as Omit<Vegetable, 'id' | 'vendorId'>,
+          } as Vegetable;
+          
+          setVegetables([...vegetables, newVegetable]);
+          setIsAddingNew(false);
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  };
+
+  const handleSaveProfile = async (updatedVendor: Partial<Vendor>) => {
+    try {
+      const { error } = await supabase
+        .from('vendors')
+        .update({
+          name: updatedVendor.name,
+          store_name: updatedVendor.storeName,
+          profile_picture: updatedVendor.profilePicture,
+          location: updatedVendor.location,
+          phone: updatedVendor.contact?.phone,
+          email: updatedVendor.contact?.email,
+          bio: updatedVendor.bio
+        })
+        .eq('id', vendor.id);
+
+      if (error) throw error;
+
+      setVendor(prev => ({ ...prev, ...updatedVendor }));
+      setIsEditingProfile(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  };
 
   const handleEditVegetable = (id: string) => {
     const vegetable = vegetables.find((v) => v.id === id) || null;
     setEditingVegetable(vegetable);
     setIsAddingNew(false);
-  };
-
-  const handleSaveVegetable = (updatedVegetable: Partial<Vegetable>) => {
-    if (editingVegetable) {
-      // Updating existing vegetable
-      setVegetables(
-        vegetables.map((v) =>
-          v.id === editingVegetable.id ? { ...v, ...updatedVegetable } : v
-        )
-      );
-      setEditingVegetable(null);
-    } else if (isAddingNew) {
-      // Adding new vegetable
-      const newVegetable: Vegetable = {
-        id: `p${vegetables.length + 1}`,
-        vendorId: vendor.id,
-        ...updatedVegetable as Omit<Vegetable, 'id' | 'vendorId'>,
-      } as Vegetable;
-      
-      setVegetables([...vegetables, newVegetable]);
-      setIsAddingNew(false);
-    }
   };
 
   const handleCancelEdit = () => {
@@ -54,11 +223,6 @@ const Vendor = () => {
 
   const handleEditProfile = () => {
     setIsEditingProfile(true);
-  };
-
-  const handleSaveProfile = (updatedVendor: Partial<Vendor>) => {
-    setVendor(prev => ({ ...prev, ...updatedVendor }));
-    setIsEditingProfile(false);
   };
 
   const handleCancelProfileEdit = () => {
@@ -75,10 +239,12 @@ const Vendor = () => {
               <p className="text-gray-600">Sign in to manage your store</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border p-8">
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                setIsAuthenticated(true);
-              }}>
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-md">
+                  {error}
+                </div>
+              )}
+              <form onSubmit={handleLogin}>
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -87,6 +253,7 @@ const Vendor = () => {
                     <input
                       type="email"
                       id="email"
+                      name="email"
                       className="w-full px-3 py-2 border rounded-md"
                       required
                     />
@@ -98,6 +265,7 @@ const Vendor = () => {
                     <input
                       type="password"
                       id="password"
+                      name="password"
                       className="w-full px-3 py-2 border rounded-md"
                       required
                     />
@@ -107,6 +275,7 @@ const Vendor = () => {
                   </Button>
                 </div>
               </form>
+              
               <div className="text-center mt-4">
                 <span className="text-sm text-gray-600">Don't have an account?</span>
                 <a href="/vendor/register" className="ml-2 text-mboga-700 hover:underline font-medium">Register as Vendor</a>

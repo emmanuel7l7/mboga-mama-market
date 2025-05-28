@@ -1,15 +1,77 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { mockVegetables, mockVendors } from '@/data/mockData';
 import { MapPin } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import type { Tables } from '@/lib/supabase';
 
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const vegetable = mockVegetables.find((v) => v.id === id);
-  
+  const [vegetable, setVegetable] = useState<Tables['vegetables'] | null>(null);
+  const [vendor, setVendor] = useState<Tables['vendors'] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+
+      try {
+        setLoading(true);
+        
+        // Fetch vegetable details
+        const { data: vegetableData, error: vegetableError } = await supabase
+          .from('vegetables')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (vegetableError) throw vegetableError;
+
+        if (vegetableData) {
+          setVegetable(vegetableData);
+
+          // Fetch vendor details
+          const { data: vendorData, error: vendorError } = await supabase
+            .from('vendors')
+            .select('*')
+            .eq('id', vegetableData.vendor_id)
+            .single();
+
+          if (vendorError) throw vendorError;
+          setVendor(vendorData);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container-custom py-16 text-center">
+          <p>Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container-custom py-16 text-center">
+          <p className="text-red-600">Error: {error}</p>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!vegetable) {
     return (
       <Layout>
@@ -24,103 +86,34 @@ const ProductDetails = () => {
     );
   }
 
-  const vendor = mockVendors.find((v) => v.id === vegetable.vendorId);
-
   return (
     <Layout>
-      <div className="container-custom py-8">
-        <Link to="/browse" className="text-mboga-600 hover:text-mboga-700 flex items-center mb-6">
-          &larr; Back to Browsing
-        </Link>
-        
+      <div className="container-custom py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="overflow-hidden rounded-lg">
+          <div>
             <img
               src={vegetable.image}
               alt={vegetable.name}
-              className="w-full h-auto object-cover"
+              className="w-full h-96 object-cover rounded-lg"
             />
           </div>
-          
           <div>
-            <h1 className="text-3xl font-bold mb-2">{vegetable.name}</h1>
-            <div className="text-2xl font-bold text-mboga-700 mb-4">
-              Tshs {vegetable.price} <span className="text-lg font-medium text-gray-600">per {vegetable.unit}</span>
-            </div>
-            
-            <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-6 ${
-              vegetable.inStock 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {vegetable.inStock ? 'In Stock' : 'Out of Stock'}
-            </div>
-            
-            <div className="prose mb-6">
-              <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-700">{vegetable.description}</p>
-            </div>
+            <h1 className="text-3xl font-bold mb-4">{vegetable.name}</h1>
+            <p className="text-2xl font-semibold text-mboga-700 mb-4">
+              Tshs {vegetable.price.toLocaleString()} / {vegetable.unit}
+            </p>
+            <p className="text-gray-600 mb-6">{vegetable.description}</p>
             
             {vendor && (
-              <div className="border-t pt-6 mt-6">
-                <h3 className="text-lg font-semibold mb-2">Sold by</h3>
-                <Link to={`/browse?vendor=${vendor.id}`} className="flex items-start gap-3 hover:bg-gray-50 p-3 rounded-md transition-colors">
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                    <img
-                      src={vendor.profilePicture}
-                      alt={vendor.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <div className="font-medium">{vendor.name}</div>
-                    <div className="text-mboga-700">{vendor.storeName}</div>
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {vendor.location}
-                    </div>
-                  </div>
-                </Link>
+              <div className="border-t pt-6">
+                <h2 className="text-xl font-semibold mb-4">Vendor Information</h2>
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="h-5 w-5 text-mboga-600" />
+                  <span>{vendor.location}</span>
+                </div>
+                <p className="text-gray-600">{vendor.bio}</p>
               </div>
             )}
-            
-            <div className="mt-8">
-              <Button
-                className="w-full bg-mboga-500 hover:bg-mboga-600 text-lg py-6"
-                disabled={!vegetable.inStock}
-              >
-                {vegetable.inStock ? 'Contact Vendor' : 'Currently Unavailable'}
-              </Button>
-            </div>
-          </div>
-        </div>
-        
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {mockVegetables
-              .filter(v => v.id !== vegetable.id)
-              .slice(0, 4)
-              .map(v => (
-                <div key={v.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                  <Link to={`/product/${v.id}`} className="block">
-                    <div className="aspect-square">
-                      <img 
-                        src={v.image} 
-                        alt={v.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-medium">{v.name}</h3>
-                      <div className="font-bold text-mboga-700 mt-1">
-                        Tshs {v.price}/{v.unit}
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              ))
-            }
           </div>
         </div>
       </div>
