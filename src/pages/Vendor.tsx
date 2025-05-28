@@ -107,6 +107,10 @@ const Vendor = () => {
                   </Button>
                 </div>
               </form>
+              <div className="text-center mt-4">
+                <span className="text-sm text-gray-600">Don't have an account?</span>
+                <a href="/vendor/register" className="ml-2 text-mboga-700 hover:underline font-medium">Register as Vendor</a>
+              </div>
             </div>
           </div>
         </div>
