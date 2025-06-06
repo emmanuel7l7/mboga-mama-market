@@ -229,6 +229,31 @@ const Vendor = () => {
     setIsEditingProfile(false);
   };
 
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setIsAuthenticated(false);
+      setVendor({
+        id: '',
+        name: '',
+        storeName: '',
+        profilePicture: '',
+        location: '',
+        contact: {
+          phone: '',
+          email: ''
+        },
+        bio: '',
+        joinDate: new Date().toISOString(),
+        subscriptionStatus: 'inactive'
+      });
+      setVegetables([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <Layout>
@@ -290,8 +315,15 @@ const Vendor = () => {
   return (
     <Layout>
       <div className="bg-mboga-600 py-10">
-        <div className="container-custom">
+        <div className="container-custom flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">Vendor Dashboard</h1>
+          <Button 
+            onClick={handleLogout}
+            variant="outline"
+            className="bg-white text-mboga-700 hover:bg-gray-100"
+          >
+            Log Out
+          </Button>
         </div>
       </div>
 
