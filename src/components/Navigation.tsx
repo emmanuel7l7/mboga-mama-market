@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -41,8 +40,8 @@ const Navigation = () => {
             <Link to="/vendor" className="text-earth-900 hover:text-mboga-600 transition font-medium">
               Vendor Dashboard
             </Link>
-            <Button className="bg-mboga-500 hover:bg-mboga-600 text-white">
-              Sign In
+            <Button asChild className="bg-mboga-500 hover:bg-mboga-600 text-white">
+              <Link to="/vendor">Sign In</Link>
             </Button>
           </nav>
         </div>
@@ -80,10 +79,11 @@ const Navigation = () => {
               </li>
               <li>
                 <Button 
+                  asChild
                   className="w-full bg-mboga-500 hover:bg-mboga-600 text-white"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Sign In
+                  <Link to="/vendor">Sign In</Link>
                 </Button>
               </li>
             </ul>

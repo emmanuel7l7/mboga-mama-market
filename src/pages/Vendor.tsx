@@ -233,6 +233,11 @@ const Vendor = () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear any existing errors
+      setError(null);
+      
+      // Reset state
       setIsAuthenticated(false);
       setVendor({
         id: '',
@@ -249,8 +254,11 @@ const Vendor = () => {
         subscriptionStatus: 'inactive'
       });
       setVegetables([]);
+      
+      // Redirect to home page after successful logout
+      window.location.href = '/';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'An error occurred during logout');
     }
   };
 
